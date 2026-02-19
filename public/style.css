@@ -230,13 +230,16 @@ body { background: #1a1a1a; color: white; margin: 0; font-family: 'Segoe UI', Ta
     justify-content: center;
     align-items: center;
     text-align: center;
+    pointer-events: none;
 }
 
 /* تظهر فقط لما الموبايل يكون بالطول */
 @media screen and (orientation: portrait) {
     #rotate-warning {
         display: flex;
+        pointer-events: all; 
     }
+}
     #game-view { /* إخفاء اللعبة وهي بالطول عشان متبوظش */
         display: none;
     }
@@ -248,3 +251,4 @@ body { background: #1a1a1a; color: white; margin: 0; font-family: 'Segoe UI', Ta
     overflow: hidden; /* عشان ميبقاش فيه سكرول */
     background: radial-gradient(circle, #2c3e50, #000000);
 }
+
