@@ -243,7 +243,7 @@ body { background: #1a1a1a; color: white; margin: 0; font-family: 'Segoe UI', Ta
     #game-view { /* إخفاء اللعبة وهي بالطول عشان متبوظش */
         display: none;
     }
-}
+
 #game-view {
     width: 100vw;  /* عرض الشاشة بالكامل */
     height: 100vh; /* طول الشاشة بالكامل */
@@ -251,4 +251,5 @@ body { background: #1a1a1a; color: white; margin: 0; font-family: 'Segoe UI', Ta
     overflow: hidden; /* عشان ميبقاش فيه سكرول */
     background: radial-gradient(circle, #2c3e50, #000000);
 }
+
 
