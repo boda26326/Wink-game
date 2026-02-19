@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الغمازة - أونلاين</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="setup">
+        <div class="login-box">
+            <h1>😉 الغمازة أونلاين</h1>
+            <input type="text" id="username" placeholder="اسمك إيه؟">
+            <input type="text" id="room-id" placeholder="رقم الروم (مثلاً 100)">
+            <button onclick="join()" class="btn-blue">دخول الروم</button>
+        </div>
+    </div>
+
+
+    <div id="wink-alert">😉 تم الغمز لك!</div>
+
+    <div id="game-area" style="display:none;">
+        <div id="sidebar">
+            <div class="role-card" id="card-value">?</div>
+            <button id="confess-btn" class="btn-yellow" onclick="socket.emit('confess')" style="display:none;">أنا اتغمزلي! ✋</button>
+            
+            <div id="host-controls" style="display:none;">
+                <hr>
+                <p>تحكم الهوست:</p>
+                <button onclick="socket.emit('startGame')" class="btn-green">ابدأ الدور ▶️</button>
+                <button onclick="socket.emit('restartGame')" class="btn-red-outline">عيد الدور 🔄</button>
+            </div>
+
+            <div class="rules-box">
+                <strong>القوانين:</strong><br>
+                • الغمازة يغمز للأحياء فقط.<br>
+                • غلطة الرقم = اهتزاز وفضيحة.<br>
+                • آخر بريء بيخمن مين الغمازة.<br>
+                • لو خرجت، ليك 30 ثانية ترجع.
+            </div>
+            <div id="status"></div>
+        </div>
+
+        <div id="game-view">
+            <div id="center-circle"></div>
+            <div id="players-grid"></div>
+            <button id="wink-btn" class="btn-red" style="display:none;" onclick="triggerMinigame()">اغمزله 😉</button>
+        </div>
+    </div>
+
+    <div id="minigame-overlay">
+        <div class="mini-box">
+            <h2 id="mini-text"></h2>
+            <input type="number" id="minigame-input">
+            <p>دوس Enter للتأكيد</p>
+        </div>
+    </div>
+    <div id="game-area" style="display:none;">
+    <button id="exit-btn" onclick="handleExit()">خروج 🚪</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+* { box-sizing: border-box; }
+body { background: #1a1a1a; color: white; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+
+/* شاشة الدخول */
+#setup { position: fixed; inset: 0; background: #000; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+.login-box { background: #222; padding: 40px; border-radius: 20px; text-align: center; border: 1px solid #444; width: 300px; }
+.login-box input { padding: 12px; border-radius: 8px; border: none; width: 100%; margin-bottom: 15px; background: #333; color: white; text-align: center; font-size: 1.1rem; }
+
+/* تنبيه الغمز */
+#wink-alert {
+    position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(255, 235, 59, 0.9); color: black;
+    padding: 20px 40px; border-radius: 50px; font-size: 2rem; font-weight: bold;
+    z-index: 2000; display: none; box-shadow: 0 0 30px rgba(255, 235, 59, 0.5);
+    animation: popIn 0.3s ease-out;
+}
+@keyframes popIn { from {transform: translate(-50%, -50%) scale(0);} to {transform: translate(-50%, -50%) scale(1);} }
+
+#confess-btn {
+    display: none; /* أساسي عشان ميبدأش ظاهر لحد */
+    /* باقي التنسيقات اللي عندك... */
+}
+
+/* تقسيم الشاشة */
+#game-area { display: flex; width: 100vw; height: 100vh; }
+#sidebar { width: 280px; background: #121212; padding: 20px; display: flex; flex-direction: column; align-items: center; border-left: 2px solid #333; z-index: 100; }
+#game-view {
+    flex-grow: 1;
+    position: relative; /* ضروري جداً عشان إحداثيات اللاعبين */
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* كارت الدور */
+.role-card { 
+    width: 140px; height: 200px; background: #fff; color: #000; 
+    display: flex; justify-content: center; align-items: center; 
+    font-size: 5rem; font-weight: bold; border-radius: 15px; margin-bottom: 10px;
+    background-image: url('https://www.transparenttextures.com/patterns/crumbled-paper.png');
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+/* القواعد والتحكم */
+.rules-box { background: #1f1f1f; padding: 15px; border-radius: 10px; font-size: 0.85rem; color: #aaa; line-height: 1.5; border: 1px solid #333; margin-top: auto; width: 100%; }
+#host-controls { width: 100%; text-align: center; margin-bottom: 10px; }
+#status { margin-top: 10px; color: #ff9800; font-size: 0.9rem; text-align: center; min-height: 20px; }
+
+/* ساحة اللعب */
+/* الدايرة الرمادية في السنتر */
+#center-circle { 
+    width: 280px; height: 280px; 
+    background: radial-gradient(circle, #444 0%, #222 100%);
+    border: 4px double #555;
+    border-radius: 50%; 
+    position: absolute; left: 50%; top: 50%; 
+    transform: translate(-50%, -50%); 
+    box-shadow: 0 0 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.05);
+    z-index: 1; 
+}
+
+#players-grid { 
+    position: absolute; 
+    inset: 0; 
+    z-index: 5; 
+    pointer-events: none; /* الطبقة نفسها شفافة للكليكات */
+}
+.player-box { 
+    position: absolute; 
+    width: 100px; 
+    height: 80px; 
+    background: white; 
+    color: black; 
+    border-radius: 10px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    font-weight: bold; 
+    cursor: pointer; 
+    z-index: 10; 
+    border: 4px solid #fff; 
+    transition: 0.3s;
+    pointer-events: auto !important; /* دي اللي بتصلح الضغط */
+}
+.player-box span {
+    pointer-events: none; /* عشان الضغطة تيجي على المربع مش النص */
+}
+.player-box.selected { border-color: #f44336; transform: scale(1.1); box-shadow: 0 0 20px #f44336; }
+.player-box.confessed { opacity: 0.5; filter: grayscale(1); }
+
+/* فقاعة الكلام */
+.bubble-msg {
+    position: absolute; top: -40px; left: 50%;
+    transform: translateX(-50%);
+    background: #ff4757; color: white;
+    padding: 5px 12px; border-radius: 15px;
+    font-size: 12px; font-weight: bold;
+    white-space: nowrap; z-index: 20;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    animation: fadeInOut 3s forwards;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translate(-50%, 10px); }
+    15% { opacity: 1; transform: translate(-50%, 0); }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+}
+/* الأزرار */
+.btn-blue { background: #2196f3; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; font-size: 1rem; }
+.btn-green { background: #4caf50; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 5px; font-weight: bold; }
+.btn-red-outline { background: transparent; color: #f44336; border: 2px solid #f44336; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; }
+.btn-yellow { background: #ffeb3b; color: black; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px; }
+.btn-red { position: absolute; bottom: 40px; background: #e53935; color: white; border: none; padding: 15px 40px; border-radius: 50px; font-size: 1.3rem; cursor: pointer; z-index: 100; box-shadow: 0 5px 20px rgba(229, 57, 53, 0.4); }
+
+/* الميني جيم والاهتزاز */
+#minigame-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 3000; }
+.mini-box { background: white; color: black; padding: 30px; border-radius: 20px; text-align: center; }
+.mini-box input { font-size: 2.5rem; width: 100px; text-align: center; margin: 15px auto; display: block; }
+/* اهتزاز بسيط وقصير */
+/* اهتزاز بسيط (للوقت) */
+.vibrate-soft {
+    animation: shake-soft 0.25s ease-in-out infinite;
+    border: 3px solid #ffeb3b !important; /* لون أصفر */
+}
+
+/* اهتزاز قوي (للإجابة الغلط) */
+.vibrate-hard {
+    animation: shake-hard 1s linear infinite;
+    border: 4px solid #ff4757 !important; /* لون أحمر */
+}
+
+@keyframes shake-soft {
+    0% { transform: translate(1px, 1px); }
+    50% { transform: translate(-1px, -1px); }
+    100% { transform: translate(1px, 1px); }
+}
+
+@keyframes shake-hard {
+    0% { transform: translate(5px, 5px) rotate(2deg); }
+    50% { transform: translate(-5px, -5px) rotate(-2deg); }
+    100% { transform: translate(5px, 5px) rotate(2deg); }
+}
+
+@keyframes shake {
+    0% { transform: translate(1px, 1px); }
+    50% { transform: translate(-1px, -1px); }
+    100% { transform: translate(1px, 1px); }
+}
+
+@keyframes shake-heavy {
+    0% { transform: translate(5px, 5px) rotate(2deg); }
+    50% { transform: translate(-5px, -5px) rotate(-2deg); }
+    100% { transform: translate(5px, 5px) rotate(2deg); }
+}
+@keyframes shake { 0% {transform: translate(2px, 2px);} 50% {transform: translate(-2px, -2px);} }
+
+/* رسالة التخمين المضيئة */
+/* التحديد الأخضر للتخمين */
+.player-box.selected {
+    border: 6px solid #2ed573 !important;
+    box-shadow: 0 0 30px #2ed573 !important;
+    transform: scale(1.15) !important;
+    z-index: 1000 !important;
+}
+
+/* رسالة التخمين */
+.guess-alert {
+    background: #ff4757;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+    animation: blink 0.8s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; }
+}
+/* تعديل أنيميشن الورقة ليكون أبطأ وأوضح */
+.dead-card {
+    width: 45px;
+    height: 60px;
+    background: #fff;
+    /* تحديد شيك وواضح للورقة */
+    border: 2px solid #222; 
+    border-radius: 6px;
+    position: absolute;
+    z-index: 100; /* عشان تظهر فوق الدايرة الرمادية */
+    pointer-events: none;
+    
+    /* حركة ناعمة جداً في الرمي */
+    transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    
+    /* ظل عشان تبان واقعية */
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+    
+    /* شكل الكارت من جوه (اختياري) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    color: #333;
+}
+#exit-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 200;
+}
