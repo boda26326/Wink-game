@@ -7,6 +7,26 @@ function join() {
     const room = document.getElementById('room-id').value;
     if (name && room) socket.emit('joinGame', { name, roomId: room });
 }
+function startFullScreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+    }
+
+    // محاولة إجبار الشاشة على الوضع الأفقي (تعمل على أندرويد وبعض المتصفحات)
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(err => {
+            console.log("Orientation lock not supported");
+        });
+    }
+}
+
+// ممكن تنادي الدالة دي أول ما اللاعب يضغط على "دخول الغرفة"
+document.getElementById('join-btn').addEventListener('click', () => {
+    startFullScreen();
+});
 // أضف استقبال رسالة الخطأ في بداية الملف
 socket.on('errorMsg', (msg) => {
     alert(msg);
@@ -302,4 +322,5 @@ socket.on('gameOver', (msg) => { alert(msg); location.reload(); });
 socket.on('gameRestarted', () => { 
     isForcedGuessMode = false; 
     document.querySelectorAll('.dead-card').forEach(c => c.remove());
+
 });
