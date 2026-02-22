@@ -8,24 +8,29 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-   <div id="rotate-warning">
-    <div style="font-size: 50px;">🔄</div>
-    <h2>يرجى تدوير الهاتف للعب</h2>
-    <p>اللعبة مصممة للوضع الأفقي فقط</p>
-    </div>
     <div id="setup">
-        <div class="login-box">
-            <h1>😉 الغمازة أونلاين</h1>
+    <div class="login-box">
+        <div class="login-left">
+            <h2>😉 الغمازة أونلاين</h2>
             <input type="text" id="username" placeholder="اسمك إيه؟">
             <input type="text" id="room-id" placeholder="رقم الروم (مثلاً 100)">
-            <button onclick="join()" class="btn-blue">دخول الروم</button>
+        </div>
+
+        <div class="login-right">
+            <div class="device-selector">
+                <p>اختر نوع جهازك عشان المقاس يظبط:</p>
+                <button id="btn-pc" class="device-btn" onclick="setDevice('pc')">💻 كمبيوتر</button>
+                <button id="btn-mobile" class="device-btn" onclick="setDevice('mobile')">📱 موبايل</button>
+            </div>
+            <button id="join-btn" onclick="join()" disabled>دخول الروم</button>
         </div>
     </div>
+</div>
 
 
     <div id="wink-alert">😉 تم الغمز لك!</div>
 
-    <div id="game-area" style="display:none;">
+    <div id="game-area">
         <div id="sidebar">
             <div class="role-card" id="card-value">?</div>
             <button id="confess-btn" class="btn-yellow" onclick="socket.emit('confess')" style="display:none;">أنا اتغمزلي! ✋</button>
@@ -34,7 +39,7 @@
                 <hr>
                 <p>تحكم الهوست:</p>
                 <button onclick="socket.emit('startGame')" class="btn-green">ابدأ الدور ▶️</button>
-                <button onclick="socket.emit('restartGame')" class="btn-red-outline">عيد الدور 🔄</button>
+                <button onclick="socket.emit('endRound')" class="btn-red-outline">إنهاء الدور</button>
             </div>
 
             <div class="rules-box">
@@ -49,11 +54,12 @@
 
         <div id="game-view">
             <div id="center-circle"></div>
-            <div id="players-grid"></div>
+            <div id="players-grid"></div> 
             <button id="wink-btn" class="btn-red" style="display:none;" onclick="triggerMinigame()">اغمزله 😉</button>
         </div>
     </div>
-
+    <div id="cards-layer">
+        </div>
     <div id="minigame-overlay">
         <div class="mini-box">
             <h2 id="mini-text"></h2>
@@ -67,6 +73,4 @@
 
     <script src="script.js"></script>
 </body>
-
 </html>
-
