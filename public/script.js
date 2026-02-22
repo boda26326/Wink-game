@@ -78,7 +78,7 @@ function updateUI(data) {
     grid.appendChild(circle);
     
     // تنسيق دايرة السنتر
-    const circleSize = selectedDevice === 'mobile' ? 300 : 350; 
+    const circleSize = selectedDevice === 'mobile' ? 350 : 350; 
     Object.assign(circle.style, {
         position: 'absolute', 
         left: '50%', 
