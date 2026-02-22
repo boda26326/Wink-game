@@ -14,97 +14,96 @@ app.use(express.static(join(__dirname, 'public')));
 
 const rooms = {};
 
-// ... (الأكواد اللي فوق زي ما هي) ...
+// دالة توزيع الأدوار وبداية دور جديد
+function startNewRound(roomId) {
+    const room = rooms[roomId];
+    if (!room || room.players.length < 3) return;
+
+    room.gameStarted = true; // الباب اتقفل
+    room.guesserId = null;
+
+    // --- توزيع الأدوار بالأرقام ---
+    const playerCount = room.players.length;
+    let roles = ['غ']; // الغمازة ثابت
+    for (let i = 1; i < playerCount; i++) {
+        roles.push(i); // الباقي أرقام مسلسلة 1، 2، 3...
+    }
+    roles = roles.sort(() => Math.random() - 0.5); // لخبطة
+
+    room.players.forEach((p, i) => {
+        p.role = roles[i];
+        p.confessed = false;
+        
+        io.to(p.id).emit('receiveRole', p.role);
+        if (p.role === 'غ') {
+            io.to(p.id).emit('showConfessBtn');
+        }
+    });
+
+    io.to(roomId).emit('gameRestarted');
+    updateRoom(roomId);
+}
 
 io.on('connection', (socket) => {
     socket.on('joinGame', ({ name, roomId }) => {
         if (!rooms[roomId]) {
             rooms[roomId] = { players: [], gameStarted: false, hostId: socket.id, guesserId: null };
         }
+        const room = rooms[roomId];
 
-        // 1. منع دخول نفس الاسم مرتين في نفس الروم
-        const nameExists = rooms[roomId].players.some(p => p.name === name);
-        if (nameExists) {
-            socket.emit('errorMsg', 'الاسم ده موجود فعلاً في الروم، اختار اسم تاني!');
-            return;
+        // 1. قفل الدخول لو الجيم بدأ
+        if (room.gameStarted) {
+            return socket.emit('errorMsg', 'عذراً، الدور بدأ بالفعل! استنى لما يخلص. ✋');
         }
+
+        const nameExists = room.players.some(p => p.name === name);
+        if (nameExists) return socket.emit('errorMsg', 'هذا الاسم موجود بالفعل.');
 
         socket.join(roomId);
         socket.roomId = roomId;
-        rooms[roomId].players.push({ id: socket.id, name, role: '', confessed: false });
+        room.players.push({ id: socket.id, name, role: '', confessed: false });
         updateRoom(roomId);
     });
 
-     socket.on('startGame', () => {
-        const room = rooms[socket.roomId];
-        if (!room || room.players.length < 3) return;
-        room.gameStarted = true;
-        room.guesserId = null;
-        let roles = ['غ'];
-        for (let i = 1; i < room.players.length; i++) roles.push(i);
-        roles = roles.sort(() => Math.random() - 0.5);
-        room.players.forEach((p, i) => {
-            p.role = roles[i];
-            p.confessed = false;
-            io.to(p.id).emit('receiveRole', p.role);
-        });
-        updateRoom(socket.roomId);
+    socket.on('startGame', () => {
+        const roomId = socket.roomId;
+        if (rooms[roomId]) startNewRound(roomId);
     });
+    socket.on('endRound', () => {
+        const roomId = socket.roomId;
+        const room = rooms[roomId];
+        if (room && room.hostId === socket.id) { // تأكيد إن اللي داس هو الهوست
+            room.gameStarted = false; // فتح الباب لدخول ناس جديدة
+            room.guesserId = null;
 
-    socket.on('restartGame', () => {
-    const room = rooms[socket.roomId];
-    if (room && room.hostId === socket.id) {
-        room.gameStarted = false;
-        room.players.forEach(p => { p.confessed = false; p.role = ''; });
-        io.to(socket.roomId).emit('gameRestarted');
-        updateRoom(socket.roomId);
-    }
-});
+            // تصفير بيانات كل لاعب
+            room.players.forEach(p => {
+                p.role = '';
+                p.confessed = false;
+            });
 
-      // ... (منطق startGame و sendWink) ...
-
-   // ... (داخل io.on('connection', (socket) => { ...
-
-socket.on('sendWink', (targetId) => {
-    // إرسال أمر إظهار الزرار للضحية فقط
-    io.to(targetId).emit('showConfessBtn');
-    // إرسال أمر إظهار الزرار للغمازة (نفسه) فقط
-    socket.emit('showConfessBtn');
-    
-    // تنبيه الضحية بالغمزة
-    io.to(targetId).emit('youGotWinked');
-});
-
-// نظام غلق الروم التلقائي عند خروج الجميع
-socket.on('disconnect', () => {
-    const roomId = socket.roomId;
-    if (roomId && rooms[roomId]) {
-        // إزالة اللاعب من القائمة
-        rooms[roomId].players = rooms[roomId].players.filter(p => p.id !== socket.id);
-        
-        // لو الروم بقت فاضية (طول المصفوفة = 0)
-        if (rooms[roomId].players.length === 0) {
-            console.log(`🗑️ الروم ${roomId} فضيت واتقفل بسلام.`);
-            delete rooms[roomId]; // مسح الروم تماماً من الذاكرة
-        } else {
-            // لو لسه فيه ناس، نحدث القائمة عندهم
+            // نبلغ الكل إن الدور انتهى ورجعنا للانتظار
+            io.to(roomId).emit('roundEnded'); 
             updateRoom(roomId);
         }
-    }
-});
-
-
-   socket.on('vibrateAll', (type) => {
-    // نبعت لكل الناس إن اللاعب ده (الغمازة) جاله اهتزاز ونوع الاهتزاز إيه
-    io.to(socket.roomId).emit('showVibration', { 
-        id: socket.id, 
-        type: type // 'soft' أو 'hard'
     });
-});
+
+    socket.on('sendWink', (targetId) => {
+        io.to(targetId).emit('showConfessBtn');
+        io.to(targetId).emit('youGotWinked');
+    });
+
+    socket.on('failedMinigame', (severity) => {
+        io.to(socket.roomId).emit('playerVibrateEffect', { 
+            winkerId: socket.id, 
+            errorType: severity 
+        });
+    });
 
     socket.on('confess', () => {
         const room = rooms[socket.roomId];
-        const player = room.players?.find(p => p.id === socket.id);
+        if (!room) return;
+        const player = room.players.find(p => p.id === socket.id);
         if (player && !player.confessed) {
             player.confessed = true;
             io.to(socket.roomId).emit('playerConfessed', { id: socket.id });
@@ -114,38 +113,40 @@ socket.on('disconnect', () => {
 
     socket.on('makeGuess', ({ targetId }) => {
         const room = rooms[socket.roomId];
+        if (!room) return;
         const winker = room.players.find(p => p.role === 'غ');
-        const isCorrect = room.players.find(p => p.id === targetId && p.role === 'غ');
-        if (isCorrect) {
-            io.to(socket.roomId).emit('gameOver', `🏆 كفو! قفشت الغمازة (${winker.name}). الأبرياء كسبوا!`);
-        } else {
-            io.to(socket.roomId).emit('gameOver', `🔥 تخمين غلط! الغمازة كان (${winker.name}). الغمازة كسب!`);
-        }
-        rooms[socket.roomId].gameStarted = false;
+        const isCorrect = (targetId === winker.id);
+        const msg = isCorrect ? `🏆 كفو! قفشت الغمازة (${winker.name})` : `🔥 غلط! الغمازة كان (${winker.name})`;
+        
+        io.to(socket.roomId).emit('gameOver', msg);
+        room.gameStarted = false; // فتحنا الباب
+        updateRoom(socket.roomId);
+
+        setTimeout(() => {
+            if (rooms[socket.roomId]) startNewRound(socket.roomId);
+        }, 5000);
     });
-     socket.on('gameOver', (msg) => {
-        const room = rooms[socket.roomId];
-        if (room) {
-            // 3. تصفير حالة الغرفة عشان تبدأوا دور جديد
-            room.gameStarted = false;
-            room.guesserId = null;
-            room.players.forEach(p => {
-                p.confessed = false;
-                p.role = '';
-            });
-            io.to(socket.roomId).emit('gameEnded', msg);
-            updateRoom(socket.roomId);
+
+    socket.on('disconnect', () => {
+        const roomId = socket.roomId;
+        if (roomId && rooms[roomId]) {
+            rooms[roomId].players = rooms[roomId].players.filter(p => p.id !== socket.id);
+            if (rooms[roomId].players.length === 0) delete rooms[roomId];
+            else updateRoom(roomId);
         }
     });
 });
 
-
 function checkGameLogic(roomId) {
     const room = rooms[roomId];
     const active = room.players.filter(p => !p.confessed);
+    
     if (active.length === 1) {
         if (active[0].role === 'غ') {
-            io.to(roomId).emit('gameOver', `🔥 الغمازة ${active[0].name} خسر! غمز لكله الابرياء كسبوا.`);
+            io.to(roomId).emit('gameOver', `🔥 الغمازة ${active[0].name} خسر!`);
+            room.gameStarted = false;
+            updateRoom(roomId);
+            // لا تنادي على startNewRound فوراً، استنى 5 ثواني
         } else {
             room.guesserId = active[0].id;
             io.to(active[0].id).emit('forceGuess');
@@ -167,4 +168,5 @@ function updateRoom(roomId) {
     });
 }
 
-server.listen(3000, () => console.log('🚀 السيرفر جاهز!'));
+
+server.listen(3000, () => console.log('🚀 Server is ready!'));
