@@ -46,8 +46,11 @@ function startNewRound(roomId) {
 
 io.on('connection', (socket) => {
     socket.on('joinGame', ({ name, roomId }) => {
-        if (!rooms[roomId]) {
-            rooms[roomId] = { players: [], gameStarted: false, hostId: socket.id, guesserId: null };
+        
+        let cleanRoomId = String(roomId).replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).trim();
+
+        if (!rooms[cleanRoomId]) {
+            rooms[cleanRoomId] = { players: [], gameStarted: false, hostId: socket.id, guesserId: null };
         }
         const room = rooms[roomId];
 
