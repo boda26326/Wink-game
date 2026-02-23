@@ -6,16 +6,24 @@ let selectedDevice = 'pc';
 // --- الدوال الأساسية ---
 
 function join() {
-    const name = document.getElementById('username').value;
-    const room = document.getElementById('room-id').value;
-    if (name && room) {
-        // تحويل الأرقام العربية إلى إنجليزية
-        room = room.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
-        
-        // إزالة أي مسافات بالصدفة
-        room = room.trim();
+    const nameInput = document.getElementById('username');
+    const roomInput = document.getElementById('room-id');
+    
+    if (!nameInput || !roomInput) return; // تأمين لو العناصر مش موجودة
 
+    const name = nameInput.value.trim();
+    let room = roomInput.value.trim();
+
+    if (name && room) {
+        // تحويل الأرقام من عربي (١٢٣) إلى إنجليزي (123) لتوحيد الروم
+        room = room.replace(/[٠-٩]/g, function(d) {
+            return "٠١٢٣٤٥٦٧٨٩".indexOf(d);
+        });
+
+        console.log("جارٍ الدخول للروم:", room); // عشان تتأكد في الـ Console
         socket.emit('joinGame', { name, roomId: room });
+    } else {
+        alert("يا ريس اكتب اسمك ورقم الروم الأول!");
     }
 }
 
