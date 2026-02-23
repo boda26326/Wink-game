@@ -9,8 +9,13 @@ function join() {
     const name = document.getElementById('username').value;
     const room = document.getElementById('room-id').value;
     if (name && room) {
+        // تحويل الأرقام العربية إلى إنجليزية
+        room = room.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
+        
+        // إزالة أي مسافات بالصدفة
+        room = room.trim();
+
         socket.emit('joinGame', { name, roomId: room });
-        // ملاحظة: يفضل تخلي الانتقال للشاشة التانية جوه socket.on('updateUI') عشان تضمن إن الاسم اتقبل
     }
 }
 
