@@ -158,7 +158,7 @@ body.mobile-mode #players-grid {
     width: 800px !important;
     height: 600px !important;
     /* سكيل الموبايل مع السنترة */
-    transform: translate(-67%, -50%) scale(0.6) !important;
+    transform: translate(-67%, -50%) scale(0.45) !important;
 }
 body.mobile-mode #game-view {
     display: block !important; /* إلغاء الـ flex في الموبايل */
@@ -166,7 +166,7 @@ body.mobile-mode #game-view {
 @media screen and (max-width: 768px) {
     #players-grid {
         /* بنصغر الـ scale */
-        transform: scale(0.6) !important;
+        transform: scale(0.45) !important;
         
         /* السر هنا: بنغير المارجن في الموبايل عشان يوازن السنتر الجديد */
         /* بما إننا صغرنا لـ 0.55، السنتر محتاج يتشفت بقيم مختلفة */
@@ -399,3 +399,4 @@ body.in-game #players-grid {
 }
 .shake-anim {animation: shake 0.2s ease-in-out 0s 2;}
 @keyframes pulse {0% { transform: scale(1); }50% { transform: scale(1.05); }100% { transform: scale(1); }}
+
