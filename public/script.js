@@ -1,358 +1,237 @@
 const socket = io();
-let myRole = "", isForcedGuessMode = false, selectedId = null;
-let gameTimer;
-let selectedDevice = 'pc'; 
+let myRole = "";
+let selectedId = null;
+let selectedRoomId = null;
+let roomType = 'public';
+let isFinalGuessMode = false;
 
-// --- الدوال الأساسية ---
+// 1. وظائف الواجهة والتنبيهات
+function showScreen(id) {
+    document.querySelectorAll('.setup-screen').forEach(s => s.style.display = 'none');
+    document.getElementById(id).style.display = 'flex';
+}
 
-function join() {
-    const nameInput = document.getElementById('username');
-    const roomInput = document.getElementById('room-id');
-    
-    if (!nameInput || !roomInput) return; // تأمين لو العناصر مش موجودة
-
-    const name = nameInput.value.trim();
-    let room = roomInput.value.trim();
-
-    if (name && room) {
-        // تحويل الأرقام من عربي (١٢٣) إلى إنجليزي (123) لتوحيد الروم
-        room = room.replace(/[٠-٩]/g, function(d) {
-            return "٠١٢٣٤٥٦٧٨٩".indexOf(d);
-        });
-
-        console.log("جارٍ الدخول للروم:", room); // عشان تتأكد في الـ Console
-        socket.emit('joinGame', { name, roomId: room });
-    } else {
-        alert("يا ريس اكتب اسمك ورقم الروم الأول!");
+function showAlert(msg) {
+    const al = document.getElementById('custom-alert');
+    if (al) {
+        al.innerText = msg;
+        al.style.display = 'block';
+        setTimeout(() => { al.style.display = 'none'; }, 3000);
     }
+}
+
+function copyCode() {
+    const code = document.getElementById('room-code-display').innerText;
+    navigator.clipboard.writeText(code).then(() => {
+        showAlert("تم نسخ كود الغرفة! 📋");
+    });
 }
 
 function setDevice(type) {
-    selectedDevice = type;
-    document.body.classList.toggle('mobile-mode', type === 'mobile');
-    
-    const joinBtn = document.getElementById('join-btn');
-    if (joinBtn) {
-        joinBtn.disabled = false;
-        joinBtn.style.opacity = "1";
-        joinBtn.style.pointerEvents = "auto";
-    }
-
-    document.querySelectorAll('.device-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText.includes(type === 'pc' ? 'كمبيوتر' : 'موبايل'));
+    const grid = document.getElementById('players-grid');
+    document.querySelectorAll('.btn-device').forEach(b => {
+        b.classList.remove('active');
+        if(b.innerText.includes(type === 'mobile' ? 'موبايل' : 'كمبيوتر')) b.classList.add('active');
     });
-
-    adjustScale();
+    grid.style.transform = type === 'mobile' ? "translate(-50%, -50%) scale(0.5)" : "translate(-50%, -50%) scale(1)";
 }
 
-function adjustScale() {
-    const grid = document.getElementById('players-grid');
-    if (!grid) return;
-    let finalScale = 1;
-    if (selectedDevice === 'mobile') {
-        const scaleX = window.innerWidth / 850;
-        const scaleY = window.innerHeight / 650;
-        finalScale = Math.min(scaleX, scaleY, 0.6);
-    }
-    grid.style.transform = `translate(-50%, -50%) scale(${finalScale})`;
-}
-
-window.addEventListener('resize', adjustScale);
-
-// --- إدارة الواجهة UI ---
-
-function updateUI(data) {
-    if (!data) return;
-    
-    // إظهار منطقة اللعب وإخفاء شاشة الدخول
-    document.getElementById('setup').style.display = 'none';
-    document.getElementById('game-area').style.display = 'flex';
-    document.body.classList.add('in-game');
-    
-    // إظهار تحكم الهوست
-    if (data.isHost) document.getElementById('host-controls').style.display = 'block';
-    
-    // وضع التخمين الإجباري
-    if (data.guesserId === socket.id) {
-        isForcedGuessMode = true;
-        document.getElementById('status').innerHTML = '<span class="guess-alert">🚨 خمن مين الغمازة!</span>';
-    }
-
-    const grid = document.getElementById('players-grid');
-    if (!grid) return;
-
-    // --- التعديل السحري هنا ---
-    // بنمسح اللاعيبة والدايرة بس، وبنسيب الـ dead-card زي ما هي عشان متختفيش
-    document.querySelectorAll('.player-box, #center-circle').forEach(el => el.remove());
-
-    // إنشاء دايرة السنتر من جديد وإضافتها
-    const circle = document.createElement('div');
-    circle.id = 'center-circle';
-    grid.appendChild(circle);
-    
-    // تنسيق دايرة السنتر
-    const circleSize = selectedDevice === 'mobile' ? 350 : 350; 
-    Object.assign(circle.style, {
-        position: 'absolute', 
-        left: '50%', 
-        top: '50%', 
-        transform: 'translate(-50%, -50%)',
-        width: circleSize + 'px', 
-        height: circleSize + 'px', 
-        backgroundColor: 'rgba(255, 255, 255, 0.05)', 
-        border: '2px dashed rgba(255, 255, 255, 0.1)',
-        borderRadius: '50%', 
-        zIndex: '0', 
-        pointerEvents: 'none'
-    });
-
-    const players = data.players || [];
-    const radiusPct = 42; 
-    
-    // رسم اللاعبين في الدائرة
-    players.forEach((p, i) => {
-        const angle = (i / players.length) * Math.PI * 2; 
+// 2. تحديث قائمة الغرف
+socket.on('roomsUpdate', (list) => {
+    const container = document.getElementById('rooms-list');
+    if(!container) return;
+    container.innerHTML = '';
+    list.forEach(room => {
         const div = document.createElement('div');
-        div.id = `p-${p.id}`;
+        div.style.padding = "10px"; div.style.borderBottom = "1px solid #222"; div.style.cursor="pointer";
+        div.innerHTML = `${room.type==='private'?'🔐':'🏠'} ${room.hostName} (${room.count})`;
+        div.onclick = () => {
+            selectedRoomId = room.id;
+            document.querySelectorAll('#rooms-list div').forEach(d => d.style.background="transparent");
+            div.style.background = "#1e2a1e";
+        };
+        container.appendChild(div);
+    });
+});
+
+// 3. الانضمام والإنشاء
+function createRoom() {
+    const name = document.getElementById('username-create').value.trim();
+    const pass = document.getElementById('room-code-display').innerText;
+    if(!name) return alert("اكتب اسمك!");
+    socket.emit('joinGame', { name, roomId: (roomType==='private'?pass:"room_"+name), password: pass, type: roomType });
+}
+
+function joinSelectedRoom() {
+    const name = document.getElementById('username-join').value.trim();
+    const pass = document.getElementById('join-password').value.trim();
+    if(!name || !selectedRoomId) return alert("اختار غرفة!");
+    socket.emit('joinGame', { name, roomId: selectedRoomId, password: pass });
+}
+
+// 4. تحديث الواجهة (UI)
+socket.on('updateUI', (data) => {
+    document.getElementById('setup-container').style.display = 'none';
+    document.getElementById('game-area').style.display = 'flex';
+    document.getElementById('host-controls').style.display = data.isHost ? 'block' : 'none';
+    
+    const grid = document.getElementById('players-grid');
+    document.querySelectorAll('.player-box').forEach(p => p.remove());
+
+    if (!data.gameStarted) {
+        document.querySelectorAll('.thrown-paper').forEach(card => card.remove());
+        isFinalGuessMode = false;
+        document.getElementById('confirm-guess-btn').style.display = 'none';
+    }
+
+    data.players.forEach((p, i) => {
+        const angle = (i / data.players.length) * Math.PI * 2;
+        const div = document.createElement('div');
+        div.id = "p-" + p.id;
         div.className = 'player-box' + (p.confessed ? ' confessed' : '');
-        
-        // حساب الإحداثيات (بما يتناسب مع حجم الشاشة)
-        const leftPct = 50 + (radiusPct * 0.75) * Math.cos(angle);
-        const topPct = 50 + radiusPct * Math.sin(angle);
-        
-        div.style.left = leftPct + '%';
-        div.style.top = topPct + '%';
-        div.style.transform = 'translate(-50%, -50%)';
+        div.style.left = (300 + 240 * Math.cos(angle)) + 'px';
+        div.style.top = (300 + 240 * Math.sin(angle)) + 'px';
         div.innerHTML = `<span>${p.id === socket.id ? "أنت" : p.name}</span>`;
 
-        // منطق النقر على اللاعب
-        div.onclick = (e) => {
-            e.stopPropagation();
-            // منع النقر على النفس أو على حد معترف (إلا لو في وضع التخمين الإجباري)
-            if (p.id === socket.id || (p.confessed && !isForcedGuessMode)) return;
-            
-            document.querySelectorAll('.player-box').forEach(el => el.classList.remove('selected'));
-            div.classList.add('selected');
+        if(p.confessed) {
+            createThrownCard(p.id, i, data.players.length);
+        }
+
+        div.onclick = () => {
+            if(p.id === socket.id || p.confessed) return;
             selectedId = p.id;
-            
-            const btn = document.getElementById('wink-btn');
-            if (isForcedGuessMode) {
-                btn.innerText = "تأكيد التخمين ✅";
-                btn.style.display = 'block';
-                btn.onclick = () => socket.emit('makeGuess', { targetId: selectedId });
-            } else if (myRole === 'غ' && !p.confessed) {
-                btn.innerText = "اغمزله 😉";
-                btn.style.display = 'block';
-                btn.onclick = () => triggerMinigame();
+            document.querySelectorAll('.player-box').forEach(b => b.classList.remove('selected'));
+            div.classList.add('selected');
+
+            if (isFinalGuessMode) {
+                document.getElementById('confirm-guess-btn').style.display = 'block';
+            } else if (myRole === 'غ') {
+                document.getElementById('wink-btn').style.display = 'block';
+                document.getElementById('wink-btn').onclick = triggerMinigame;
             }
         };
         grid.appendChild(div);
     });
+});
+
+// 5. منطق الورقة الطائرة (معدل ليكون قريباً من اللاعب)
+function createThrownCard(playerId, index, total) {
+    const cardId = "card-" + playerId;
+    if (document.getElementById(cardId)) return; 
+
+    const card = document.createElement('div');
+    card.id = cardId;
+    card.className = 'thrown-paper';
+    card.innerText = ""; 
+    
+    // زاوية اللاعب الأصلية
+    const angle = (index / total) * Math.PI * 2;
+    
+    // مكان البداية (عند اللاعب بالضبط)
+    const startX = 300 + 240 * Math.cos(angle);
+    const startY = 300 + 240 * Math.sin(angle);
+    
+    card.style.left = startX + "px";
+    card.style.top = startY + "px";
+    
+    document.getElementById('players-grid').appendChild(card);
+    
+    // الهدف: مسافة قريبة من اللاعب (داخل الدائرة المنقطة شوية)
+    setTimeout(() => {
+        // 130 هو نصف قطر الدائرة الداخلية، بنخلي الورقة تثبت عند مسافة 160 من المركز (قريبة للاعب)
+        const targetDist = 105; 
+        const drift = (Math.random() - 0.5) * 30; // تشتيت بسيط عشان الورق م يركبش فوق بعضه
+        
+        const endX = 300 + targetDist * Math.cos(angle) + drift;
+        const endY = 300 + targetDist * Math.sin(angle) + drift;
+        
+        card.style.left = endX + "px";
+        card.style.top = endY + "px";
+        card.style.transform = `translate(-50%, -50%) rotate(${(Math.random() * 60) - 30}deg)`;
+    }, 50);
 }
 
-// --- أحداث Socket.io ---
+// 6. أحداث Socket
+socket.on('showBubble', ({ id, msg }) => {
+    const pBox = document.getElementById("p-" + id);
+    if(pBox) {
+        const bubble = document.createElement('div');
+        bubble.className = 'speech-bubble';
+        bubble.innerText = msg;
+        pBox.appendChild(bubble);
+        setTimeout(() => bubble.remove(), 3000);
 
-socket.on('updateUI', (data) => {
-    const gameData = Array.isArray(data) ? data[0] : data;
-    updateUI(gameData);
-});
-
-socket.on('receiveRole', (role) => {
-    myRole = role;
-    const cardDisplay = document.getElementById('card-value');
-    
-    if (role === 'غ') {
-        document.getElementById('confess-btn').style.display = 'block';
-        cardDisplay.innerText = "غ";
-        cardDisplay.style.color = "#ff4444"; // لون أحمر للغمازة
-    } else {
-        document.getElementById('confess-btn').style.display = 'none';
-        cardDisplay.innerText = role; // هيعرض الرقم (1 أو 2 أو 3...)
-        cardDisplay.style.color = "#b49000"; // لون ذهبي للأرقام
-    }
-});
-
-socket.on('showConfessBtn', () => {
-    // دي بتتبعت من السيرفر للضحية بس
-    console.log("الضحية استلم الغمزة، بنظهر زرار الاعتراف...");
-    document.getElementById('confess-btn').style.display = 'block';
-});
-
-socket.on('playerConfessed', (data) => {
-    const box = document.getElementById(`p-${data.id}`);
-    if (!box) return;
-
-    box.classList.add('confessed');
-
-    // فقاعة الكلام
-    const msg = document.createElement('div');
-    msg.className = 'bubble-msg';
-    msg.innerText = 'أنا اتغمزلي! 😵';
-    box.appendChild(msg);
-    setTimeout(() => { if (msg.parentNode) msg.remove(); }, 3000);
-
-    // كارت الموت (الرمي)
-    const card = document.createElement('div');
-    card.className = 'dead-card';
-    const startX = parseFloat(box.style.left);
-    const startY = parseFloat(box.style.top);
-    const targetX = 50 + (startX - 50) * 0.5; 
-    const targetY = 50 + (startY - 50) * 0.5;
-
-    card.style.left = startX + '%';
-    card.style.top = startY + '%';
-    document.getElementById('players-grid').appendChild(card);
-
-    setTimeout(() => {
-        card.style.opacity = '1';
-        card.style.left = targetX + '%';
-        card.style.top = targetY + '%';
-        card.style.transform = `translate(-50%, -50%) rotate(${Math.random() * 40 - 20}deg)`;
-    }, 50);
-});
-
-socket.on('playerVibrateEffect', (data) => {
-    const winkerBox = document.getElementById(`p-${data.winkerId}`);
-    if (winkerBox) {
-        const className = (data.errorType === 'light') ? 'vibrate-light' : 'vibrate-hard';
-        
-        // إضافة الكلاس
-        winkerBox.classList.add(className);
-        
-        // (إضافة اختيارية) هز الموبايل فعلياً لو أندرويد لزيادة الأكشن
-        if (navigator.vibrate) {
-            navigator.vibrate(data.errorType === 'light' ? 100 : 400);
+        const allBoxes = Array.from(document.querySelectorAll('.player-box'));
+        const idx = allBoxes.findIndex(b => b.id === "p-" + id);
+        if(idx !== -1) {
+            createThrownCard(id, idx, allBoxes.length);
         }
-
-        // نشيل الكلاس بعد ثانية كاملة (1000ms) عشان الناس تلحق تشوف اللون
-        setTimeout(() => {
-            winkerBox.classList.remove(className);
-        }, 1000); 
     }
 });
 
-socket.on('gameRestarted', () => {
-    isForcedGuessMode = false;
-    selectedId = null;
-    document.getElementById('status').innerHTML = '';
-    document.getElementById('wink-btn').style.display = 'none';
-    document.querySelectorAll('.player-box').forEach(box => box.classList.remove('confessed', 'selected'));
-    document.querySelectorAll('.dead-card, .bubble-msg').forEach(el => el.remove());
-    document.querySelectorAll('.dead-card').forEach(card => card.remove()); // ✅ ينظف هنا
-    document.querySelectorAll('.bubble-msg').forEach(msg => msg.remove());
-    // حط السطر ده جوه socket.on('roundEnded') 
-    // وجوه socket.on('gameRestarted')
-    document.getElementById('cards-layer').innerHTML = '';
+socket.on('startFinalGuess', () => {
+    isFinalGuessMode = true;
+    showAlert("أنت آخر لاعب! خمن الآن مين الغمازة واضغط تأكيد.");
 });
-socket.on('roundEnded', () => {
-    myRole = "";
-    isForcedGuessMode = false;
-    selectedId = null;
 
-    // تنظيف الواجهة
-    document.getElementById('card-value').innerText = "؟";
+function confirmGuess() {
+    if(!selectedId) return alert("اختار لاعب أولاً!");
+    socket.emit('finalGuess', selectedId);
+    isFinalGuessMode = false;
+    document.getElementById('confirm-guess-btn').style.display = 'none';
+}
+
+socket.on('visualShake', (id) => {
+    const el = document.getElementById("p-" + id);
+    if(el) { el.classList.add('shake-effect'); setTimeout(()=>el.classList.remove('shake-effect'), 500); }
+});
+
+socket.on('gameOver', (msg) => {
+    showAlert(msg);
+    myRole = ""; 
+    document.getElementById('card-value').innerText = "?";
     document.getElementById('confess-btn').style.display = 'none';
     document.getElementById('wink-btn').style.display = 'none';
-    document.getElementById('status').innerHTML = '<span>في انتظار الهوست يبدأ...</span>';
-
-    // مسح أي كروت ميتة أو فقاعات كلام
-    document.querySelectorAll('.dead-card, .bubble-msg').forEach(el => el.remove());
-    document.querySelectorAll('.dead-card').forEach(card => card.remove()); // ✅ ينظف هنا
-    // حط السطر ده جوه socket.on('roundEnded') 
-    // وجوه socket.on('gameRestarted')
-    document.getElementById('cards-layer').innerHTML = '';
-
-    // إرجاع شكل اللاعيبة للطبيعي
-    document.querySelectorAll('.player-box').forEach(box => {
-        box.classList.remove('confessed', 'selected', 'vibrate-hard', 'vibrate-light');
-        box.style.opacity = '1';
-    
-    });
 });
 
-socket.on('gameOver', (msg) => { 
-    alert(msg); 
-    // امسح السطر اللي كان بيمسح الـ dead-card من هنا ❌
-    
-    const winkBtn = document.getElementById('wink-btn');
-    if (winkBtn) winkBtn.style.display = 'none';
+socket.on('youGotWinked', () => {
+    document.getElementById('confess-btn').style.display = 'block';
+    if(navigator.vibrate) navigator.vibrate(200);
 });
 
-socket.on('errorMsg', (msg) => {
-    alert(msg);
-    // نرجعه لشاشة الدخول وننظف الـ UI
-    document.getElementById('setup').style.display = 'block';
-    document.getElementById('game-area').style.display = 'none';
-    document.body.classList.remove('in-game');
+socket.on('receiveRole', (r) => { 
+    myRole = r; 
+    document.getElementById('card-value').innerText = r;
+    if(r === 'غ') document.getElementById('confess-btn').style.display = 'block';
 });
 
-// --- الميني جيم (Minigame) ---
+// 7. التحكم
+function toggleRoomType(t) {
+    roomType = t;
+    document.getElementById('btn-public').classList.toggle('active', t==='public');
+    document.getElementById('btn-private').classList.toggle('active', t==='private');
+    document.getElementById('copy-area').style.display = t==='private'?'block':'none';
+    document.getElementById('room-code-display').innerText = Math.random().toString(36).substring(2,8).toUpperCase();
+}
 
 function triggerMinigame() {
-    const emojis = ["🍎", "⭐", "⚽", "🐱", "🚀", "💎", "😂", "👾", "🎃", "🎁", "👓", "🎭", "🎨", "🎱", "🎢", "🎋", "🏐", "🎫", "🔑", "🎆", "♟"];
-    const selectedEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-    const count = Math.floor(Math.random() * 3) + 2;
-    const displayString = selectedEmoji.repeat(count);
-    
-    const overlay = document.getElementById('minigame-overlay');
+    const count = Math.floor(Math.random()*3)+2;
+    document.getElementById('minigame-overlay').style.display='flex';
+    document.getElementById('mini-display').innerText = "⭐".repeat(count);
     const input = document.getElementById('minigame-input');
-    
-    overlay.style.display = 'flex';
-    document.getElementById('mini-text').innerText = `كم عدد الـ ${selectedEmoji}؟`;
-    document.querySelector('.mini-box p').innerText = displayString;
-    
     input.value = ""; input.focus();
-    let timeLeft = 3;
-    
-    clearInterval(gameTimer);
-    gameTimer = setInterval(() => {
-        timeLeft--;
-        input.placeholder = `الوقت: ${timeLeft}s`;
-        if (timeLeft <= 0) {
-            clearInterval(gameTimer);
-            handleMinigameFailure();
-        }
-    }, 1000);
-
-        input.onkeyup = (e) => {
-        if (e.key === "Enter") {
-            clearInterval(gameTimer);
-            const userValue = parseInt(input.value);
-            if (userValue === count) {
-                socket.emit('sendWink', selectedId);
-                document.getElementById('minigame-overlay').style.display = 'none';
-            } else {
-                // حساب الفرق
-                const diff = Math.abs(userValue - count);
-                const errorSeverity = (diff <= 2) ? 'light' : 'hard';
-            
-                socket.emit('failedMinigame', errorSeverity); // بنبعت النوع للسيرفر
-                document.getElementById('minigame-overlay').style.display = 'none';
-                document.getElementById('wink-btn').style.display = 'none';
-            }
+    input.onkeyup = (e) => {
+        if(e.key === "Enter") {
+            if(parseInt(input.value) === count) socket.emit('sendWink', selectedId);
+            else socket.emit('failedMinigame');
+            document.getElementById('minigame-overlay').style.display='none';
+            document.getElementById('wink-btn').style.display='none';
         }
     };
 }
 
-function handleMinigameFailure() {
-    socket.emit('failedMinigame'); // السيرفر هيهز مربعك قدام الكل
-    document.getElementById('minigame-overlay').style.display = 'none';
-    document.getElementById('wink-btn').style.display = 'none';
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-}
-
-function confess() {
-    socket.emit('confess'); // بيبعت للسيرفر إنك اعترفت
-    document.getElementById('confess-btn').style.display = 'none'; // يختفي بعد ما تدوس
-}
-
-function endRound() {
-    const isHost = document.getElementById('host-controls').style.display === 'block';
-    if (isHost) {
-        if (confirm("هل تريد إنهاء الدور والعودة لغرفة الانتظار؟")) {
-            socket.emit('endRound');
-        }
-    } else {
-        location.reload(); // اللاعب العادي يخرج
-    }
+function startGame() { socket.emit('startGame'); }
+function confess() { 
+    socket.emit('confess'); 
+    document.getElementById('confess-btn').style.display='none'; 
 }
