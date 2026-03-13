@@ -1,413 +1,263 @@
-/* =========================================
-   1. الإعدادات العامة (Global Styles)
-   ========================================= */
+/* الأساسيات وتصفير المسافات */
 * { 
     box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    user-select: none; /* منع تحديد النصوص لإعطاء إحساس التطبيق */
 }
 
 body { 
-    background: #1a1a1a; 
-    color: white; 
-    margin: 0; 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: #0f0f13; 
+    color: #e0e0e0; 
     overflow: hidden; 
+    height: 100vh; 
     width: 100vw;
-    height: 100vh;
 }
 
-/* =========================================
-   2. شاشة الدخول (الواجهة العريضة)
-   ========================================= */
-#setup { 
+/* شاشات الإعدادات (البداية) */
+.setup-screen { 
     position: fixed; 
     inset: 0; 
-    background: #000; 
+    background: radial-gradient(circle, #1a1a2e 0%, #0f0f13 100%); 
     display: flex; 
     justify-content: center; 
     align-items: center; 
-    z-index: 9999; 
+    z-index: 2000; 
 }
 
-.login-box { 
-    background: #222; 
-    padding: 30px; 
-    border-radius: 20px; 
-    border: 1px solid #444; 
-    width: 90%; 
-    max-width: 650px; 
-    display: flex;
-    flex-direction: row; 
-    gap: 20px;
-    align-items: stretch;
-}
-
-.login-left {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    text-align: center;
-}
-
-.login-left h2 { font-size: 1.8rem; margin-bottom: 20px; color: #fff; }
-
-.login-left input { 
-    padding: 12px; border-radius: 8px; border: none; width: 100%; 
-    margin-bottom: 10px; background: #333; color: white; 
-    text-align: center; font-size: 1rem; 
-}
-
-.login-right {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.03);
-    padding: 20px;
-    border-radius: 15px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.device-selector p { font-size: 0.9rem; margin-bottom: 15px; color: #ccc; text-align: center; }
-
-.device-btn { 
-    width: 100%; padding: 10px; margin-bottom: 8px; background: transparent;
-    border: 1px solid #555; color: #fff; border-radius: 8px; cursor: pointer; transition: 0.3s;
-}
-
-.device-btn.active { background: #333; border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.1); }
-
-#join-btn {
-    cursor: pointer !important;
-    pointer-events: auto !important;
-    background: #4caf50;
-    color: white;
-    border: none;
-    padding: 15px;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-#join-btn:disabled { background: #555 !important; opacity: 0.6; cursor: not-allowed; }
-
-@media screen and (max-width: 500px) {
-    .login-box { flex-direction: column; max-width: 320px; }
-}
-
-/* =========================================
-   3. تخطيط اللعبة (Layout & Grid)
-   ========================================= */
-#game-area { 
+.menu-box, .rooms-container.mini { 
+    background: #16161d; 
+    padding: 25px; 
+    border-radius: 24px; 
+    width: 350px; 
+    text-align: center; 
+    border: 1px solid #2d2d3a; 
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
     display: flex; 
-    width: 100vw; 
-    height: 100vh; 
+    flex-direction: column; 
+    gap: 12px; 
 }
 
-#sidebar { 
-    width: 230px; background: #121212; padding: 20px; 
-    display: flex; flex-direction: column; align-items: center; 
-    border-left: 2px solid #333; z-index: 100; 
-}
+h1 { font-size: 2.2rem; color: #fff; margin-bottom: 10px; }
 
-#game-view {
-    flex: 1;
-    position: relative;
-    background: #1a1a1a;
-    overflow: hidden;
-}
-
-/* الملعب الأساسي - تم تثبيت السنتر */
-/* الحل الجذري للتوسيط */
-/* الكلاس الموحد اللي هيظبط البيسي والموبايل */
-/* وضع الكمبيوتر الافتراضي */
-/* تأكد إن الملعب له أبعاد حقيقية وظاهر في نص الشاشة */
-#players-grid {
-    position: absolute !important;
-    width: 800px;
-    height: 600px;
-    top: 50%;
-    /* الزقة اللي إنت عايزها للبيسي عشان يفسح مكان للسايدبار */
-    left: 50% !important; 
-    transform: translate(-50%, -50%) scale(1);
-    margin: 0 !important;
-}
-
-/* تأكد إن صندوق اللاعب له لون وحجم وظاهر فوق الكل */
-.player-box {
-    position: absolute !important;
-    height: 100px;
-    width: 100px;
-    background: white;
-    color: black;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000 !important;
-    display: flex !important;
-    border-radius: 10px;
-    /* نضمن إن أي تغيير في الكلاس ميغيرش الـ translate */
-    transform: translate(-50%, -50%) !important; 
-    transition: box-shadow 0.2s, background 0.2s; /* بلاش نغير الـ transform في الـ transition */
-}  
-
-/* وضع الموبايل (سواء بالزرار أو بمقاس الشاشة) */
-/* وضع الموبايل (الضربة القاضية) */
-body.mobile-mode #players-grid {
-    position: fixed !important; /* ثابت تماماً بالنسبة للشاشة */
-    top: 50% !important;
-    left: 50% !important; /* سنتر صريح في الموبايل */
-    width: 800px !important;
-    height: 600px !important;
-    /* سكيل الموبايل مع السنترة */
-    transform: translate(-67%, -50%) scale(0.45) !important;
-}
-body.mobile-mode #game-view {
-    display: block !important; /* إلغاء الـ flex في الموبايل */
-}
-@media screen and (max-width: 768px) {
-    #players-grid {
-        /* بنصغر الـ scale */
-        transform: scale(0.45) !important;
-        
-        /* السر هنا: بنغير المارجن في الموبايل عشان يوازن السنتر الجديد */
-        /* بما إننا صغرنا لـ 0.55، السنتر محتاج يتشفت بقيم مختلفة */
-        /* أو الأضمن: نلغي المارجن ونستخدم translate للموبايل بس */
-        margin: 0 !important;
-        transform: translate(-50%, -50%) scale(0.45) !important;
-    }
-}
-/* شاشة الدخول لازم تكون فوق أي "إعاقة" تانية */
-#setup {
-    z-index: 99999 !important; /* أعلى رقم ممكن */
-    pointer-events: auto !important;
-}
-
-/* الملعب والدايرة الرمادية لازم "يختفوا" تقنياً طول ما إحنا في شاشة الدخول */
-#game-view, #players-grid, #center-circle {
-    /* السطر ده بيخلي الضغط "يمر من خلالهم" وما يعطلش الزراير اللي تحتهم */
-    pointer-events: none !important; 
-}
-
-/* لما الجيم يبدأ فعلياً، نرجع اللمس للملعب */
-body.in-game #game-view, 
-body.in-game #players-grid {
-    pointer-events: auto !important;
-}
-
-/* زرار الدخول والزراير اللي جواه لازم يشتغلوا غصب عن أي حاجة */
-.login-box, .login-box *, #join-btn {
-    pointer-events: auto !important;
-    cursor: pointer !important;
-}
-
-/* =========================================
-   5. عناصر ساحة اللعب (Game Elements)
-   ========================================= */
-/* امسح ده أو خليه كدة عشان يختفي تماماً لو مش عايزه */
-#center-circle {
-    display: block !important; /* تأكيد إنها مش none */
-    pointer-events: none; /* عشان لما تدوس عليها متلغيش الدوسة على اللاعيبة */
-}
-.player-box span { pointer-events: none; }
-.player-box.confessed { opacity: 0.5; filter: grayscale(1); }
-
-.player-box.selected {
-    /* لما تختار لاعب، نكبر الحجم بس من غير ما نغير مكانه */
-    transform: translate(-50%, -50%) scale(1.1) !important;
-    border: 10px solid gold !important;
-}
-.role-card { 
- width: 140px; 
- height: 200px; 
- background: #fff; 
- color: #000; 
- display: flex; 
- justify-content: center; 
- align-items: center; 
- font-size: 5rem; 
- font-weight: bold; 
- border-radius: 15px; 
- margin-bottom: 10px; 
- background-image: url('https://www.transparenttextures.com/patterns/crumbled-paper.png'); 
- box-shadow: 0 0 15px rgba(0,0,0,0.5);
-}
-
-@media screen and (max-width: 768px) {
-    .role-card {
-        /* بنصغر الـ scale */
-        transform: scale(0.7) !important;
-        margin: 0 !important;
-        transform: translate(0%, 0%) scale(0.7) !important;
-    }
-}
-
-#cards-layer {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* عشان ميعطلش الكليك على اللاعبين */
-    z-index: 5; /* فوق الدائرة وتحت أسامي اللاعبين لو تحب */
-}
-
-.dead-card {
-    position: absolute;
-    width: 35px;  /* تصغير الحجم */
-    height: 50px; /* تصغير الحجم */
-    background: #eee;
-    border: 1px solid #999;
-    border-radius: 4px;
-    transition: all 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* حركة رمي واقعية */
-    opacity: 0;
-    z-index: 5;
-    pointer-events: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-}
-
-/* =========================================
-   6. الأزرار (Buttons)
-   ========================================= */
-.btn-yellow { 
-    background: #ffeb3b; 
-    color: black; 
-    border: none; 
+/* المدخلات (Inputs) */
+.pass-input { 
+    background: #09090c; 
+    color: #fff; 
+    border: 1px solid #333; 
     padding: 12px; 
-    border-radius: 8px; 
-    cursor: pointer; 
+    border-radius: 12px; 
     width: 100%; 
-    font-weight: bold; 
-    margin-bottom: 10px; 
+    outline: none; 
+    text-align: center; 
+    font-size: 1rem;
 }
-.btn-red { 
-    position: absolute; 
-    bottom: 40px; 
-    background: #e53935; 
-    color: white;
-    border: none;
-    padding: 15px 40px;
-    border-radius: 50px;
-    font-size: 1.3rem;
-    cursor: pointer;
-    z-index: 100;
-    box-shadow: 0 5px 20px rgba(229, 57, 53, 0.4); 
-}
-.btn-red-outline { 
-    background: transparent;
-    color: #f44336; 
-    border: 2px solid #f44336; 
-    padding: 8px; 
-    border-radius: 5px; 
+.pass-input:focus { border-color: #28a745; }
+
+/* الأزرار */
+button { 
+    padding: 12px; 
+    border-radius: 12px; 
+    border: none; 
     cursor: pointer; 
-    width: 100%; 
-    font-weight: bold;
+    font-weight: 600; 
+    transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
-#confess-btn { 
-    display: none; 
+button:active { transform: scale(0.95); }
+
+.btn-green { background: #28a745; color: white; width: 100%; }
+.btn-gray { background: #2d2d3a; color: #ccc; width: 100%; }
+.btn-gray.active { border: 2px solid #28a745; color: #fff; background: #1e2a1e; }
+.btn-red { background: #e74c3c; color: white; width: 100%; margin-top: auto; }
+.btn-exit { background: transparent; color: #777; font-size: 0.9rem; text-decoration: underline; margin-top: 5px; }
+.btn-confirm { background: #8e44ad; color: white; display: none; width: 100%; margin-bottom: 10px; }
+
+.join-row { display: flex; gap: 8px; width: 100%; }
+.join-row .pass-input { flex: 2; }
+.join-row button { flex: 1; }
+
+/* الشريط الجانبي (Sidebar) */
+#sidebar { 
+    position: fixed; 
+    right: 0; 
+    top: 0; 
+    width: 220px; 
+    height: 100%; 
+    background: #0b0b0e; 
+    border-left: 1px solid #222; 
+    padding: 20px; 
+    display: flex; 
+    flex-direction: column; 
+    z-index: 1000; 
 }
-#wink-btn {
-    position: fixed;
-    bottom: 30px;
+
+/* ورقة الدور (الدور الحالي) */
+#role-paper { 
+    background: #fdfdfd; 
+    color: #111; 
+    padding: 15px; 
+    border-radius: 4px; 
+    text-align: center; 
+    box-shadow: 5px 5px 0px #28a745; 
+    transform: rotate(-1deg); 
+    margin-bottom: 20px; 
+}
+#card-value { font-size: 40px; font-weight: bold; color: #111; }
+
+/* ساحة اللعب */
+#game-view { 
+    flex: 1; 
+    position: relative; 
+    margin-right: 220px; 
+    height: 100vh; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#players-grid { 
+    position: absolute; 
+    width: 600px; 
+    height: 600px; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+
+#center-circle { 
+    position: absolute; 
+    inset: 130px; 
+    border: 2px dashed #2d2d3a; 
+    border-radius: 50%; 
+    pointer-events: none;
+}
+
+/* مربعات اللاعبين */
+.player-box { 
+    position: absolute; 
+    width: 90px; 
+    height: 90px; 
+    background: #16161d; 
+    border: 1px solid #333; 
+    border-radius: 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: bold; 
+    transform: translate(-50%, -50%); 
+    cursor: pointer; 
+    font-size: 14px; 
+    text-align: center; 
+    color: white; 
+    z-index: 10;
+    transition: 0.3s;
+}
+
+.player-box.selected { 
+    border: 3px solid #28a745; 
+    box-shadow: 0 0 20px rgba(40, 167, 69, 0.5); 
+}
+
+.player-box.confessed { 
+    opacity: 0.5; 
+    filter: grayscale(0.8); 
+}
+
+/* فقاعة الكلام (أنا اتغمزلي) */
+.speech-bubble {
+    position: absolute;
+    bottom: 110%;
     left: 50%;
     transform: translateX(-50%);
-    padding: 15px 40px;
-    font-size: 1.2rem;
-    border-radius: 50px;
-    background: #e53935;
-    box-shadow: 0 4px 15px rgba(229, 57, 53, 0.4);
-    z-index: 10000; 
-}
-#confess-btn {
-    background: #ffeb3b !important; /* لون أحمر فاقع */
-    color: white;
-    font-size: 1.1rem;
-    animation: pulse 1.5s infinite; /* خليه ينبض عشان اللاعب ياخد باله */
-}
-
-#exit-btn { 
-    position: fixed; top: 20px; right: 20px; 
-    background: #ff4757; color: white; border: none; 
-    padding: 10px 20px; border-radius: 8px; cursor: pointer; 
-    font-weight: bold; z-index: 200; 
-}
-
-.btn-blue { background: #2196f3; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
-.btn-green { background: #4caf50; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 5px; font-weight: bold; }
-#confess-btn { display: none; margin-top: 10px; }
-
-/* =========================================
-   7. النوافذ والتنبيهات (Overlays)
-   ========================================= */
-#wink-alert {
-    position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%);
-    background: rgba(255, 235, 59, 0.9); color: black;
-    padding: 20px 40px; border-radius: 50px; font-size: 2rem;
-    z-index: 2000; display: none; animation: popIn 0.3s ease-out;
-}
-
-#minigame-overlay { 
-    position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
-    display: none; justify-content: center; align-items: center; z-index: 30000; 
-}
-
-.mini-box { background: white; color: black; padding: 30px; border-radius: 20px; text-align: center; }
-.mini-box input { font-size: 2.5rem; width: 100px; text-align: center; margin: 15px auto; display: block; }
-
-.bubble-msg {
-    position: absolute;
-    top: -40px;
-    background: white;
-    padding: 5px 10px;
-    border-radius: 10px;
-    color: black;
+    background: #fff;
+    color: #000;
+    padding: 8px 15px;
+    border-radius: 15px;
+    font-size: 13px;
     font-weight: bold;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     white-space: nowrap;
-    z-index: 2000;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 100;
+}
+.speech-bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: #fff;
 }
 
-/* =========================================
-   8. الأنيميشن (Animations)
-   ========================================= */
-@keyframes popIn { from {transform: translate(-50%, -50%) scale(0);} to {transform: translate(-50%, -50%) scale(1);} }
-@keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, 10px); } 15% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
-/* الأنميشن اللي بيهز المربع */
-/* أنميشن الهزة */
-/* 1. هزة خفيفة (لو الفرق 1 أو 2) */
-@keyframes shake-light {
-    0%, 100% { transform: translate(-50%, -50%); }
-    25% { transform: translate(-51%, -50%); }
-    75% { transform: translate(-49%, -50%); }
+@keyframes popIn { 
+    from { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.5); } 
+    to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } 
 }
 
-/* 2. هزة قوية وعنيفة (لو الفرق كبير) */
-@keyframes shake-hard {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    10%, 30%, 50%, 70%, 90% { transform: translate(-52%, -51%) scale(1.1); }
-    20%, 40%, 60%, 80% { transform: translate(-48%, -49%) scale(1.1); }
+/* الورقة المرمية (تطير للمنتصف) */
+.thrown-paper {
+    position: absolute;
+    width: 45px;
+    height: 60px;
+    background: #fdfdfd;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.4);
+    z-index: 5; /* تحت اللاعبين */
+    transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
 }
 
-/* الهزة القوية بلون أحمر صارخ */
-.vibrate-hard {
-    animation: shake-hard 0.5s ease-in-out !important;
-    border: 4px solid #ff0000 !important; /* تخانة الخط ولونه */
-    background-color: rgba(255, 0, 0, 0.2) !important; /* خلفية حمراء شفافة للمربع */
-    box-shadow: 0 0 20px #ff0000, inset 0 0 10px #ff0000 !important; /* توهج خارجي وداخلي */
-    color: white !important;
-    z-index: 100 !important; /* عشان يظهر فوق الكل وهو بيتهز */
+/* كود الغرفة القابل للنسخ */
+#room-code-display {
+    cursor: copy;
+    padding: 15px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    transition: 0.2s;
+}
+#room-code-display:hover { background: #1e1e26; }
+#room-code-display:active { background: #28a745; color: white; transform: scale(0.98); }
+
+/* التنبيهات واهتزاز الخطأ */
+#custom-alert { 
+    position: fixed; 
+    top: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    background: #28a745; 
+    color: white; 
+    padding: 12px 30px; 
+    border-radius: 30px; 
+    z-index: 3000; 
+    display: none; 
+    font-weight: bold; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-/* الهزة الخفيفة بلون برتقالي */
-.vibrate-light {
-    animation: shake-light 0.2s ease-in-out 3 !important;
-    border: 4px solid #ffa500 !important;
-    background-color: rgba(255, 165, 0, 0.2) !important;
-    box-shadow: 0 0 15px #ffa500 !important;
-    color: white !important;
-    z-index: 100 !important;
+@keyframes shake { 
+    0%, 100% { transform: translate(-50%, -50%) rotate(0); } 
+    25% { transform: translate(-55%, -50%) rotate(5deg); } 
+    75% { transform: translate(-45%, -50%) rotate(-5deg); } 
 }
-.shake-anim {animation: shake 0.2s ease-in-out 0s 2;}
-@keyframes pulse {0% { transform: scale(1); }50% { transform: scale(1.05); }100% { transform: scale(1); }}
+.shake-effect { animation: shake 0.3s; border: 3px solid #ff0000 !important; }
 
-
-
+/* إعدادات الشاشات الصغيرة (الموبايل) */
+@media (max-width: 768px) {
+    #sidebar { width: 160px; padding: 10px; }
+    #game-view { margin-right: 160px; }
+    #role-paper { padding: 8px; margin-bottom: 10px; }
+    #card-value { font-size: 28px; }
+    h1 { font-size: 1.5rem; }
+    .menu-box { width: 90%; }
+}
