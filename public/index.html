@@ -3,70 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>الغمازة - أونلاين</title>
+    <title>😉 الغمازة أونلاين</title>
     <link rel="stylesheet" href="style.css">
-    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-    <div id="setup">
-    <div class="login-box">
-        <div class="login-left">
-            <h2>😉 الغمازة أونلاين</h2>
-            <input type="text" id="username" placeholder="اسمك إيه؟">
-            <input type="text" id="room-id" placeholder="رقم الروم (مثلاً 100)">
+    <div id="custom-alert"></div>
+
+    <div id="setup-container">
+        <div id="main-menu" class="setup-screen">
+            <div class="menu-box">
+                <h1>😉 الغمازة</h1>
+                <button class="btn-green" onclick="showScreen('join-room-screen')">دخول غرفة</button>
+                <button class="btn-gray" onclick="showScreen('manage-room-screen')">إدارة غرفة</button>
+            </div>
         </div>
 
-        <div class="login-right">
-            <div class="device-selector">
-                <p>اختر نوع جهازك عشان المقاس يظبط:</p>
-                <button id="btn-pc" class="device-btn" onclick="setDevice('pc')">💻 كمبيوتر</button>
-                <button id="btn-mobile" class="device-btn" onclick="setDevice('mobile')">📱 موبايل</button>
+        <div id="join-room-screen" class="setup-screen" style="display:none;">
+            <div class="rooms-container mini">
+                <h1>🎮 انضمام</h1>
+                <input type="text" id="username-join" placeholder="اسمك..." class="pass-input">
+                
+                <div class="join-row">
+                    <button class="btn-gray btn-device" onclick="setDevice('mobile')">📱 موبايل</button>
+                    <button class="btn-gray btn-device active" onclick="setDevice('pc')">💻 كمبيوتر</button>
+                </div>
+
+                <div style="height:120px; overflow-y:auto; background:#09090c; border-radius:12px; margin: 10px 0;" id="rooms-list"></div>
+                
+                <div class="join-row">
+                    <input type="text" id="join-password" placeholder="كلمة السر" class="pass-input">
+                    <button class="btn-green" onclick="joinSelectedRoom()">دخول</button>
+                </div>
+                <button class="btn-exit" onclick="showScreen('main-menu')">رجوع</button>
             </div>
-            <button id="join-btn" onclick="join()" disabled>دخول الروم</button>
+        </div>
+
+        <div id="manage-room-screen" class="setup-screen" style="display:none;">
+            <div class="menu-box">
+                <h1>⚙️ الإعدادات</h1>
+                <input type="text" id="username-create" placeholder="اسم الهوست..." class="pass-input">
+                <div class="join-row">
+                    <button class="btn-gray active" id="btn-public" onclick="toggleRoomType('public')">عامة</button>
+                    <button class="btn-gray" id="btn-private" onclick="toggleRoomType('private')">خاصة</button>
+                </div>
+                <div id="copy-area" style="display:none;">
+                    <p style="font-size: 12px; color: #888; margin-bottom: 5px;">اضغط على الكود للنسخ 👇</p>
+                    <div class="pass-input" style="color:#28a745; border-style:dashed;" id="room-code-display" onclick="copyCode()"></div>
+                </div>
+                <div class="join-row">
+                    <button class="btn-gray btn-device" onclick="setDevice('mobile')">📱 موبايل</button>
+                    <button class="btn-gray btn-device active" onclick="setDevice('pc')">💻 كمبيوتر</button>
+                </div>
+                <button class="btn-green" onclick="createRoom()">إنشاء الغرفة 🚀</button>
+                <button class="btn-exit" onclick="showScreen('main-menu')">رجوع</button>
+            </div>
         </div>
     </div>
-</div>
 
-
-    <div id="wink-alert">😉 تم الغمز لك!</div>
-
-    <div id="game-area">
-        <div id="sidebar">
-            <div class="role-card" id="card-value">?</div>
-            <button id="confess-btn" class="btn-yellow" onclick="socket.emit('confess')" style="display:none;">أنا اتغمزلي! ✋</button>
-            
-            <div id="host-controls" style="display:none;">
-                <hr>
-                <p>تحكم الهوست:</p>
-                <button onclick="socket.emit('startGame')" class="btn-green">ابدأ الدور ▶️</button>
-                <button onclick="socket.emit('endRound')" class="btn-red-outline">إنهاء الدور</button>
-            </div>
-
-            <div class="rules-box">
-            </div>
-            <div id="status"></div>
-        </div>
-
-        <div id="game-view">
-            <div id="center-circle"></div>
-            <div id="players-grid"></div> 
-            <button id="wink-btn" class="btn-red" style="display:none;" onclick="triggerMinigame()">اغمزله 😉</button>
-        </div>
-    </div>
-    <div id="cards-layer">
-        </div>
-    <div id="minigame-overlay">
-        <div class="mini-box">
-            <h2 id="mini-text"></h2>
-            <input type="number" id="minigame-input">
-            <p>دوس Enter للتأكيد</p>
-        </div>
-    </div>
     <div id="game-area" style="display:none;">
-    <button id="exit-btn" onclick="handleExit()">خروج 🚪</button>
+        <div id="game-view">
+            <div id="players-grid"><div id="center-circle"></div></div>
+        </div>
+        <div id="sidebar">
+            <div id="role-paper"><small>دورك:</small><div id="card-value">؟</div></div>
+    
+            <button id="wink-btn" class="btn-green" style="display:none; padding:15px; margin-bottom:10px;">اغمز 😉</button>
+            <button id="confess-btn" class="btn-green" style="display:none; background:#e67e22;" onclick="confess()">اعتراف 🚨</button>
+            
+            <button id="confirm-guess-btn" class="btn-confirm btn-side" onclick="confirmGuess()" style="display:none;">تأكيد التخمين ✅</button>
+
+            <div id="host-controls" style="display:none; width:100%;">
+                <button class="btn-green" onclick="startGame()" style="margin-bottom:10px;">بدء الدور 🚀</button>
+                <button class="btn-gray" onclick="socket.emit('forceEndRound')">إنهاء الدور</button>
+            </div>
+            <button class="btn-red" onclick="location.reload()" style="margin-top:auto;">خروج 🚪</button>
+        </div>
     </div>
 
+    <div id="minigame-overlay" class="setup-screen" style="display:none;">
+        <div class="menu-box">
+            <h3>عد النجوم!</h3>
+            <h1 id="mini-display" style="letter-spacing:10px;"></h1>
+            <input type="number" id="minigame-input" class="pass-input" placeholder="كم؟">
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
-
