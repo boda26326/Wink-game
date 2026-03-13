@@ -140,8 +140,8 @@ button:active { transform: scale(0.95); }
     position: absolute; 
     width: 90px; 
     height: 90px; 
-    background: #16161d; 
-    border: 1px solid #333; 
+    background: #373750; 
+    border: 1px solid #66668d; 
     border-radius: 20px; 
     display: flex; 
     align-items: center; 
