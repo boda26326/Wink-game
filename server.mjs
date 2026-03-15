@@ -104,7 +104,7 @@ io.on('connection', (socket) => {
             const p = room.players.find(x => x.id === socket.id);
             if (p && !p.confessed) { 
                 p.confessed = true; 
-                io.to(socket.roomId).emit('showBubble', { id: socket.id, msg: "أنا اتغمزلي! 📄" });
+                io.to(socket.roomId).emit('showBubble', { id: socket.id, msg: "أنا اتغمزلي!😵" });
                 checkLogic(socket.roomId); 
             }
         }
