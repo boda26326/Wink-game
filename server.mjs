@@ -117,7 +117,7 @@ io.on('connection', (socket) => {
 
         const killer = room.players.find(p => p.role === 'غ');
         if (guessedId === killer.id) {
-            io.to(socket.roomId).emit('gameOver', `🔥 فوز ساحق! المحقق خمن صح، الغمازة كان: ${killer.name}`);
+            io.to(socket.roomId).emit('gameOver', `🔥 فوز ساحق! اللاعب خمن صح، الغمازة كان: ${killer.name}`);
         } else {
             io.to(socket.roomId).emit('gameOver', `💀 خسرت! التخمين غلط. الغمازة الحقيقي هو: ${killer.name}`);
         }
